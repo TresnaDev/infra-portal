@@ -1,0 +1,9 @@
+services:
+  app:
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+  worker:
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
