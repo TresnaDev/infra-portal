@@ -1,58 +1,71 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Infra Portal
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Infra Portal adalah aplikasi web berbasis Laravel yang dirancang dengan performa tinggi menggunakan [FrankenPHP](https://frankenphp.dev/). Proyek ini sepenuhnya menggunakan Docker untuk mempermudah proses pengembangan lokal (local development) yang mencakup PostgreSQL untuk basis data, Redis untuk caching dan antrean (queues), serta Vite untuk manajemen aset frontend.
 
-## About Laravel
+## 📦 Prasyarat
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Sebelum memulai, pastikan sistem Anda telah terpasang:
+- [Docker](https://www.docker.com/products/docker-desktop/) & Docker Compose
+- `make` (opsional, namun sangat disarankan untuk kemudahan eksekusi perintah)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Langkah Setup (Instalasi)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Salin file environment**  
+   Gandakan file `.env.example` menjadi `.env`.
+   ```bash
+   cp .env.example .env
+   ```
+   *Anda dapat menyesuaikan konfigurasi di dalam `.env` jika diperlukan (seperti kredensial database).*
 
-## Learning Laravel
+2. **Jalankan Setup Awal**  
+   Proyek ini memiliki `Makefile` yang menyederhanakan proses setup. Jalankan perintah berikut untuk mem-build image Docker, menjalankan container, membuat `APP_KEY`, dan menjalankan migrasi database:
+   ```bash
+   make setup
+   ```
+   *(Jika Anda tidak memiliki `make`, Anda dapat menjalankan: `docker compose up -d --build`, lalu `docker compose exec app php artisan key:generate` dan `docker compose exec app php artisan migrate`).*
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+3. **Install Dependensi PHP (Composer)**  
+   Dikarenakan volume host di-mount ke dalam container, direktori `vendor` mungkin kosong pada host Anda. Jalankan perintah ini untuk menginstal dependensi:
+   ```bash
+   docker compose exec app composer install
+   ```
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 💻 Menjalankan Aplikasi
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+Untuk menjalankan aplikasi di mode development (termasuk Vite hot-reload):
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+make dev
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+- **Aplikasi Web (Laravel)**: `http://localhost:8088` (sesuai port di `docker-compose.yml`)
+- **Vite Dev Server**: `http://localhost:5173`
 
-## Contributing
+Untuk mematikan seluruh container, jalankan:
+```bash
+make down
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🛠️ Daftar Perintah (Makefile)
 
-## Code of Conduct
+Proyek ini telah dilengkapi dengan beberapa perintah Makefile (shortcuts) yang bisa mempermudah pekerjaan sehari-hari. Anda bisa melihat seluruh daftar perintah dengan menjalankan:
+```bash
+make help
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Beberapa perintah yang sering digunakan:
+- `make up` : Menjalankan semua container di background (detached).
+- `make down` : Mematikan semua container.
+- `make shell` : Masuk ke dalam shell (terminal) container aplikasi (app).
+- `make migrate` : Menjalankan migrasi database (`php artisan migrate`).
+- `make cache-clear` : Menghapus semua cache aplikasi.
+- `make logs` : Melihat log dari semua service.
+- `make logs-app` : Melihat log khusus untuk service aplikasi utama.
 
-## Security Vulnerabilities
+## 🏗️ Struktur Service (Docker)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Konfigurasi `docker-compose.yml` mencakup service berikut:
+- **app**: Web server utama berbasis FrankenPHP dan PHP 8.3.
+- **worker**: Container untuk menjalankan queue worker (proses antrean di background).
+- **postgres**: Database PostgreSQL versi 16.
+- **redis**: Server Redis versi 7 untuk caching dan antrean.
+- **vite**: Container Node.js untuk menjalankan development server Vite.
